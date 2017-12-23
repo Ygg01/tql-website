@@ -4,7 +4,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 	<id>https://antoyo.github.io/tql-website/</id>
 	<title>TQL</title>
-	<updated>2017-12-23T01:26:46+00:00</updated>
+	<updated>2017-12-28T01:18:45+01:00</updated>
 
 	<subtitle>TQL is a Rust ORM that is easy to use, checks the validity and generate your queries at compile-time</subtitle>
 
@@ -31,7 +31,7 @@
 			<id>https://antoyo.github.io/tql-website/tql-easy-orm/</id>
 			<title>TQL, an easy-to-use ORM for Rust</title>
 			<link href="https://antoyo.github.io/tql-website/tql-easy-orm/" rel="alternate" type="text/html" title="TQL, an easy-to-use ORM for Rust" />
-			<updated>2017-12-11T00:00:00+00:00</updated>
+			<updated>2017-12-11T00:00:00+01:00</updated>
 
 			
 				
@@ -303,7 +303,7 @@ Take note that &lt;code&gt;tql&lt;/code&gt; is not ready for production use, it&
 			
 			
 
-			<published>2017-12-11T00:00:00+00:00</published>
+			<published>2017-12-11T00:00:00+01:00</published>
 		</entry>
 	
 </feed>

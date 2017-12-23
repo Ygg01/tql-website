@@ -224,7 +224,166 @@
 
 			
 
-			
+			<div class="paragraph">
+<p>For this first task, we&#8217;re going to create a small demo and show how <a href="https://github.com/antoyo/tql">TQL</a>  works in practice.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+The guide assumes you are using <a href="https://www.postgresql.org/">PostgreSQL</a> and <a href="https://www.rustup.rs/">Nightly Rust Toolchain</a>. Make sure you are on Nightly Rust and your DB is <a href="https://www.postgresql.org/">PostgreSQL</a>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>First, we need to create the demo project.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="bash"><span></span>cargo new tql_demo
+<span class="tok-nb">cd</span> tql_demo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then add following <a href="https://github.com/antoyo/tql">TQL</a>  dependencies to our <code>Cargo.toml</code> file.</p>
+</div>
+<div class="paragraph">
+<p>Cargo.toml</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="toml"><span></span><span class="tok-p">[</span><span class="tok-n">dependencies</span><span class="tok-p">]</span>
+<span class="tok-n">tql</span> <span class="tok-o">=</span> <span class="tok-p">{</span> <span class="tok-n">git</span> <span class="tok-o">=</span> <span class="tok-s">&quot;https://github.com/antoyo/tql&quot;</span> <span class="tok-p">}</span>
+<span class="tok-n">tql_macros</span> <span class="tok-o">=</span> <span class="tok-p">{</span> <span class="tok-n">git</span> <span class="tok-o">=</span> <span class="tok-s">&quot;https://github.com/antoyo/tql&quot;</span> <span class="tok-p">}</span>
+
+<span class="tok-p">[</span><span class="tok-n">dependencies</span><span class="tok-p">.</span><span class="tok-n">postgres</span><span class="tok-p">]</span>
+<span class="tok-n">version</span> <span class="tok-o">=</span> <span class="tok-s">&quot;^0.15.1&quot;</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Next, we want to add following imports intou our <code>lib.rs</code></p>
+</div>
+<div class="paragraph">
+<p>lib.rs</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#![feature(proc_macro)]</span><span class="tok-w"></span>
+
+<span class="tok-k">extern</span><span class="tok-w"> </span><span class="tok-k">crate</span><span class="tok-w"> </span><span class="tok-n">postgres</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-k">extern</span><span class="tok-w"> </span><span class="tok-k">crate</span><span class="tok-w"> </span><span class="tok-n">tql</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-cp">#[macro_use]</span><span class="tok-w"></span>
+<span class="tok-k">extern</span><span class="tok-w"> </span><span class="tok-k">crate</span><span class="tok-w"> </span><span class="tok-n">tql_macros</span><span class="tok-p">;</span><span class="tok-w"></span>
+
+<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">postgres</span><span class="tok-o">::</span><span class="tok-p">{</span><span class="tok-n">Connection</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">TlsMode</span><span class="tok-p">};</span><span class="tok-w"></span>
+<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">tql</span><span class="tok-o">::</span><span class="tok-n">PrimaryKey</span><span class="tok-p">;</span><span class="tok-w"></span>
+<span class="tok-k">use</span><span class="tok-w"> </span><span class="tok-n">tql_macros</span><span class="tok-o">::</span><span class="tok-n">sql</span><span class="tok-p">;</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For our example, we&#8217;ll have a <code>User</code> table, linked via primary key to <code>Adress</code> table, the rough SQL being something like:</p>
+</div>
+<div class="paragraph">
+<p>User.sql</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sql"><span></span><span class="tok-k">CREATE</span> <span class="tok-k">TABLE</span> <span class="tok-k">user</span>
+<span class="tok-p">(</span>
+  <span class="tok-n">id</span> <span class="tok-nb">serial</span> <span class="tok-k">NOT</span> <span class="tok-k">NULL</span><span class="tok-p">,</span>
+  <span class="tok-n">name</span> <span class="tok-nb">character</span> <span class="tok-nb">varying</span><span class="tok-p">(</span><span class="tok-mi">255</span><span class="tok-p">)</span> <span class="tok-k">NOT</span> <span class="tok-k">NULL</span><span class="tok-p">,</span>
+  <span class="tok-k">CONSTRAINT</span> <span class="tok-n">pk_users</span> <span class="tok-k">PRIMARY</span> <span class="tok-k">KEY</span> <span class="tok-p">(</span><span class="tok-n">id</span><span class="tok-p">)</span>
+<span class="tok-p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Address.sql</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sql"><span></span><span class="tok-k">CREATE</span> <span class="tok-k">TABLE</span> <span class="tok-n">address</span>
+<span class="tok-p">(</span>
+  <span class="tok-n">id</span> <span class="tok-nb">serial</span> <span class="tok-k">NOT</span> <span class="tok-k">NULL</span><span class="tok-p">,</span>
+  <span class="tok-n">address_line1</span> <span class="tok-nb">character</span> <span class="tok-nb">varying</span><span class="tok-p">(</span><span class="tok-mi">255</span><span class="tok-p">)</span> <span class="tok-k">NOT</span> <span class="tok-k">NULL</span><span class="tok-p">,</span>
+  <span class="tok-n">address_line2</span> <span class="tok-nb">character</span> <span class="tok-nb">varying</span><span class="tok-p">(</span><span class="tok-mi">255</span><span class="tok-p">),</span>
+  <span class="tok-n">user_id</span> <span class="tok-nb">serial</span> <span class="tok-k">NOT</span> <span class="tok-k">NULL</span><span class="tok-p">,</span>
+  <span class="tok-k">CONSTRAINT</span> <span class="tok-n">pk_address</span> <span class="tok-k">PRIMARY</span> <span class="tok-k">KEY</span> <span class="tok-p">(</span><span class="tok-n">id</span><span class="tok-p">),</span>
+  <span class="tok-k">CONSTRAINT</span> <span class="tok-n">fk_addr_users</span> <span class="tok-k">FOREIGN</span> <span class="tok-k">KEY</span> <span class="tok-p">(</span><span class="tok-n">user_id</span><span class="tok-p">)</span>
+      <span class="tok-k">REFERENCES</span> <span class="tok-n">users</span> <span class="tok-p">(</span><span class="tok-n">id</span><span class="tok-p">)</span>
+<span class="tok-p">)</span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In order to model such tables in <a href="https://github.com/antoyo/tql">TQL</a>, we&#8217;ll add following code to our previously mentioned <code>lib.rs</code></p>
+</div>
+<div class="paragraph">
+<p>lib.rs</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-cp">#[derive(SqlTable)]</span><span class="tok-w"></span>
+<span class="tok-k">struct</span> <span class="tok-nc">User</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">id</span><span class="tok-o">:</span><span class="tok-w"> </span><span class="tok-n">PrimaryKey</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">name</span><span class="tok-o">:</span><span class="tok-w"> </span><span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span>
+
+<span class="tok-cp">#[derive(SqlTable)]</span><span class="tok-w"></span>
+<span class="tok-k">struct</span> <span class="tok-nc">Address</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">id</span><span class="tok-o">:</span><span class="tok-w"> </span><span class="tok-n">PrimaryKey</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">address_line1</span><span class="tok-o">:</span><span class="tok-w"> </span><span class="tok-nb">String</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">address_line2</span><span class="tok-o">:</span><span class="tok-w"> </span><span class="tok-nb">Option</span><span class="tok-o">&lt;</span><span class="tok-nb">String</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">fk</span><span class="tok-o">:</span><span class="tok-w"> </span><span class="tok-n">ForeignKey</span><span class="tok-o">&lt;</span><span class="tok-n">User</span><span class="tok-o">&gt;</span><span class="tok-p">,</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We&#8217;ll going to have to create a connection and use it to create table and do some basic Create, Read, Update, Delete operations.</p>
+</div>
+<div class="paragraph">
+<p>First we need a connection</p>
+</div>
+<div class="paragraph">
+<p>lib.rs</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">get_connection</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-o">-&gt;</span><span class="tok-w"> </span><span class="tok-n">Connection</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-n">Connection</span><span class="tok-o">::</span><span class="tok-n">connect</span><span class="tok-p">(</span><span class="tok-s">&quot;postgres://test:test@localhost/demo&quot;</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">TlsMode</span><span class="tok-o">::</span><span class="tok-nb">None</span><span class="tok-p">).</span><span class="tok-n">unwrap</span><span class="tok-p">()</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And a models to create</p>
+</div>
+<div class="paragraph">
+<p>lib.rs</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="rust"><span></span><span class="tok-k">fn</span> <span class="tok-nf">main</span><span class="tok-p">()</span><span class="tok-w"> </span><span class="tok-p">{</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-c1">//Created tables</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">sql</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-n">User</span><span class="tok-p">.</span><span class="tok-n">create</span><span class="tok-p">());</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">sql</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-n">Address</span><span class="tok-p">.</span><span class="tok-n">create</span><span class="tok-p">());</span><span class="tok-w"></span>
+
+<span class="tok-w">    </span><span class="tok-c1">//Insert some values</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">name</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">&quot;Daniel&quot;</span><span class="tok-p">.</span><span class="tok-n">to_string</span><span class="tok-p">();</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">user_id</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">sql</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-n">User</span><span class="tok-p">.</span><span class="tok-n">insert</span><span class="tok-p">(</span><span class="tok-n">name</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">name</span><span class="tok-p">)).</span><span class="tok-n">unwrap</span><span class="tok-p">();</span><span class="tok-w"></span>
+
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">line1</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">&quot;Obviouslyfake Blv.&quot;</span><span class="tok-w"></span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">addr_id</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">sql</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-n">Address</span><span class="tok-p">.</span><span class="tok-n">insert</span><span class="tok-p">(</span><span class="tok-n">address_line1</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">line1</span><span class="tok-p">,</span><span class="tok-w"> </span><span class="tok-n">user_id</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-o">&amp;</span><span class="tok-n">user_id</span><span class="tok-p">)).</span><span class="tok-n">unwrap</span><span class="tok-p">();</span><span class="tok-w"></span>
+
+<span class="tok-w">    </span><span class="tok-c1">// Update a row.</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">result</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">sql</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-n">Address</span><span class="tok-p">.</span><span class="tok-n">get</span><span class="tok-p">(</span><span class="tok-n">addr_id</span><span class="tok-p">).</span><span class="tok-n">update</span><span class="tok-p">(</span><span class="tok-n">address_line1</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-s">&quot;Marsilijeva&quot;</span><span class="tok-p">)).</span><span class="tok-n">unwrap</span><span class="tok-p">();</span><span class="tok-w"></span>
+
+<span class="tok-w">    </span><span class="tok-c1">// Delete a row.</span>
+<span class="tok-w">    </span><span class="tok-kd">let</span><span class="tok-w"> </span><span class="tok-n">_</span><span class="tok-w"> </span><span class="tok-o">=</span><span class="tok-w"> </span><span class="tok-n">sql</span><span class="tok-o">!</span><span class="tok-p">(</span><span class="tok-n">Address</span><span class="tok-p">.</span><span class="tok-n">get</span><span class="tok-p">(</span><span class="tok-n">addr_id</span><span class="tok-p">).</span><span class="tok-n">delete</span><span class="tok-p">());</span><span class="tok-w"></span>
+<span class="tok-p">}</span><span class="tok-w"></span></code></pre>
+</div>
+</div>
 		</article>
 	</div><!-- /.medium-12.columns -->
 </div><!-- /.row -->
