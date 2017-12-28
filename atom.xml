@@ -4,7 +4,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 	<id>https://antoyo.github.io/tql-website/</id>
 	<title>TQL</title>
-	<updated>2017-12-28T01:18:45+01:00</updated>
+	<updated>2017-12-28T01:21:52+01:00</updated>
 
 	<subtitle>TQL is a Rust ORM that is easy to use, checks the validity and generate your queries at compile-time</subtitle>
 
