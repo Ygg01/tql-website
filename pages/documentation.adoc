@@ -1,3 +1,132 @@
 = Documentation
 :page-layout: page-fullwidth
 :page-permalink: /documentation/
+
+For this first task, we're going to create a small demo and show how https://github.com/antoyo/tql[TQL]  works in practice.
+
+NOTE: The guide assumes you are using https://www.postgresql.org/[PostgreSQL] and https://www.rustup.rs/[Nightly Rust Toolchain]. Make sure you are on Nightly Rust and your DB is https://www.postgresql.org/[PostgreSQL]
+
+First, we need to create the demo project.
+
+[source,bash]
+----
+cargo new tql_demo
+cd tql_demo
+----
+
+Then add following https://github.com/antoyo/tql[TQL]  dependencies to our `Cargo.toml` file.
+
+Cargo.toml
+[source,toml]
+----
+[dependencies]
+tql = { git = "https://github.com/antoyo/tql" }
+tql_macros = { git = "https://github.com/antoyo/tql" }
+
+[dependencies.postgres]
+version = "^0.15.1"
+----
+
+Next, we want to add following imports intou our `lib.rs`
+
+lib.rs
+[source,rust]
+----
+#![feature(proc_macro)]
+
+extern crate postgres;
+extern crate tql;
+#[macro_use]
+extern crate tql_macros;
+
+use postgres::{Connection, TlsMode};
+use tql::PrimaryKey;
+use tql_macros::sql;
+----
+
+
+For our example, we'll have a `User` table, linked via primary key to `Adress` table, the rough SQL being something like:
+
+User.sql
+[source,sql]
+----
+CREATE TABLE user
+(
+  id serial NOT NULL,
+  name character varying(255) NOT NULL,
+  CONSTRAINT pk_users PRIMARY KEY (id)
+)
+----
+
+Address.sql
+[source,sql]
+----
+CREATE TABLE address
+(
+  id serial NOT NULL,
+  address_line1 character varying(255) NOT NULL,
+  address_line2 character varying(255),
+  user_id serial NOT NULL,
+  CONSTRAINT pk_address PRIMARY KEY (id),
+  CONSTRAINT fk_addr_users FOREIGN KEY (user_id)
+      REFERENCES users (id)
+)
+----
+
+In order to model such tables in https://github.com/antoyo/tql[TQL], we'll add following code to our previously mentioned `lib.rs`
+
+lib.rs
+[source,rust]
+----
+#[derive(SqlTable)]
+struct User {
+    id: PrimaryKey,
+    name: String,
+}
+
+#[derive(SqlTable)]
+struct Address {
+    id: PrimaryKey,
+    address_line1: String,
+    address_line2: Option<String>,
+    fk: ForeignKey<User>,
+}
+----
+
+We'll going to have to create a connection and use it to create table and do some basic Create, Read, Update, Delete operations.
+
+First we need a connection
+
+lib.rs
+[source,rust]
+----
+fn get_connection() -> Connection {
+    Connection::connect("postgres://test:test@localhost/demo", TlsMode::None).unwrap()
+}
+----
+
+And a models to create
+
+
+lib.rs
+[source,rust]
+----
+fn main() {
+    //Created tables
+    let _ = sql!(User.create());
+    let _ = sql!(Address.create());
+
+    //Insert some values
+    let name = "Daniel".to_string();
+    let user_id = sql!(User.insert(name = &name)).unwrap();
+
+    let line1 = "Obviouslyfake Blv."
+    let addr_id = sql!(Address.insert(address_line1 = &line1, user_id = &user_id)).unwrap();
+
+    // Update a row.
+    let result = sql!(Address.get(addr_id).update(address_line1 = "Marsilijeva")).unwrap();
+
+    // Delete a row.
+    let _ = sql!(Address.get(addr_id).delete());
+}
+----
